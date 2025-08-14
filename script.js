@@ -9,7 +9,7 @@ document.getElementById('scanButton').addEventListener('click', async () => {
 
   const formData = new FormData();
   formData.append('file', file);
-  formData.append('apikey', 'YOUR_OCR_API_KEY'); // Replace with your OCR API key
+  formData.append('apikey', K81834924488957); // Replace with your OCR API key
 
   try {
     const response = await fetch('https://api.ocr.space/parse/image', {
