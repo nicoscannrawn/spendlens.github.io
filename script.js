@@ -1,7 +1,9 @@
-document.getElementById('scanButton').addEventListener('click', async () => {
+// Function to handle the receipt scanning process
+async function scanReceipt() {
   const fileInput = document.getElementById('receiptInput');
   const file = fileInput.files[0];
-  
+  const apiKey = K81834924488957; // Replace with your OCR API key
+
   if (!file) {
     alert('Please upload a receipt image.');
     return;
@@ -9,79 +11,56 @@ document.getElementById('scanButton').addEventListener('click', async () => {
 
   const formData = new FormData();
   formData.append('file', file);
-  formData.append('apikey', K81834924488957); // Replace with your OCR API key
+  formData.append('apikey', apiKey);
 
   try {
     const response = await fetch('https://api.ocr.space/parse/image', {
       method: 'POST',
-      body: formData
+      body: formData,
     });
     const data = await response.json();
+
     if (data.IsErroredOnProcessing) {
       alert('Error processing the receipt.');
-    } else {
-      const parsedText = data.ParsedResults[0].ParsedText;
-      displayExpenseDetails(parsedText);
+      return;
     }
+
+    const parsedText = data.ParsedResults[0].ParsedText;
+    displayReceiptDetails(parsedText);
   } catch (error) {
     alert('Error scanning the receipt.');
   }
-});
+}
 
-function displayExpenseDetails(text) {
+// Function to display extracted receipt details
+function displayReceiptDetails(text) {
   const storeName = extractStoreName(text);
   const totalAmount = extractTotalAmount(text);
   const purchaseDate = extractPurchaseDate(text);
 
   document.getElementById('storeName').textContent = storeName;
-  document.getElementById('totalAmount').textContent = totalAmount;
+  document.getElementById('totalAmount').textContent = totalAmount.toFixed(2);
   document.getElementById('purchaseDate').textContent = purchaseDate;
   document.getElementById('expenseDetails').style.display = 'block';
 }
 
+// Function to extract store name from OCR text
 function extractStoreName(text) {
-  // Implement logic to extract store name from the text
-  return 'Sample Store';
+  const match = text.match(/^(.+)$/m); // Matches the first non-empty line
+  return match ? match[1].trim() : 'Unknown Store';
 }
 
+// Function to extract total amount from OCR text
 function extractTotalAmount(text) {
-  // Implement logic to extract total amount from the text
-  return '20.00';
+  const match = text.match(/(?:Total|Amount Due|Total Due)[\s:]*\$(\d+(\.\d{1,2})?)/i);
+  return match ? parseFloat(match[1]) : 0.00;
 }
 
+// Function to extract purchase date from OCR text
 function extractPurchaseDate(text) {
-  // Implement logic to extract purchase date from the text
-  return '2025-08-14';
-}
-let expenses = [];
-
-function addExpense(store, amount, date) {
-  expenses.push({ store, amount, date });
-  updateExpenseList();
+  const match = text.match(/\b(\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{2,4})\b/);
+  return match ? match[0] : 'Unknown Date';
 }
 
-function updateExpenseList() {
-  const expenseList = document.getElementById('expenseList');
-  expenseList.innerHTML = '';
-  expenses.forEach(expense => {
-    const li = document.createElement('li');
-    li.textContent = `${expense.date} - ${expense.store}: $${expense.amount}`;
-    expenseList.appendChild(li);
-  });
-}
-
-function setBudget(amount) {
-  localStorage.setItem('budget', amount);
-}
-
-function getBudget() {
-  return parseFloat(localStorage.getItem('budget')) || 0;
-}
-
-function checkBudget() {
-  const totalSpent = expenses.reduce((sum, expense) => sum + expense.amount, 0);
-  const budget = getBudget();
-  if (totalSpent > budget) {
-    alert('You have exceeded your budget!');
-  }
-}
+// Event listener for the scan button
+document.getElementById('scanButton').addEventListener('click', scanReceipt);
